@@ -1,0 +1,42 @@
+function [ x,y,z,A, B,C ] = forkine( q1,q2,q3,q4,q5,q6,q7 )
+%This function calculates the forward kinematics of a 7 DOF robot. It can be changed to accomodate arm robots of different configurations 
+%based on DH parameters
+%   theta      d         a         alpha
+L = [q1        0.34       0       pi/2;....
+    -q2        0          0      -pi/2;....
+     q3        0.4        0      -pi/2;...
+    -q4        0          0       pi/2;...
+     q5        0.4        0       pi/2;...
+    -q6        0          0      -pi/2;...
+     q7        0.126      0.015   0];
+for i=1:7
+ b=L(i,2);
+ thi=L(i,1);
+ a=L(i,3);
+ alf=L(i, 4);
+ tb=[1, 0, 0, 0; 0, 1, 0, 0; 0, 0, 1, b; 0, 0, 0, 1];
+ tthi=[cos(thi), -sin(thi), 0, 0; sin(thi), cos(thi), 0, 0; 0, 0, 1,0; 0, 0, 0, 1];
+ ta= [1, 0, 0, a; 0, 1, 0, 0; 0, 0, 1, 0; 0, 0, 0, 1];
+ talf=[1, 0, 0, 0; 0, cos(alf), -sin(alf), 0; 0, sin(alf), cos(alf), 0; 0, 0, 0,1];
+ tout(:,:,i)=tb*tthi*ta*talf;
+end
+Tr=eye(4);
+ploi=zeros(7,3);
+for i=1:7
+    Tr=Tr*tout(:,:,i);
+    ploi(i,1)=Tr(1,4);
+    ploi(i,2)=Tr(2,4);
+    ploi(i,3)=Tr(3,4);
+end
+%plot3(plotting(:,:,1:7),'r');
+%plot3(ploi(:,1),ploi(:,2),ploi(:,3),'r')
+
+%Ttool = [eye(3) [0.015 ; 0; 0.238 ]; 0 0 0 1];
+t=Tr;
+
+
+x=t(1,4);
+z=t(3,4);
+y=t(2,4);
+
+end
