@@ -1,0 +1,24 @@
+%This code generates the tarjectory of KR5 KUKA Robot
+%It uses functions from Robotics System Toolbox
+
+tini=transl(0.4, -0.4, 0.3);
+tend=transl(0.2, 0.3, 0);
+axis equal;
+mdl_KR5;
+KR5.plot([0 0 1 0 0 0 ]);
+hold on;
+trplot(tini, 'color', 'r', 'arrow');
+trplot(tend, 'color', 'g', 'arrow');
+samples=100;
+trint=inv(tini)*tend;
+for i=1:samples+1
+    trinter=tini*transl((i-1)/samples*transl(trint));
+    ax=  -trinter(1,4);
+    ay = -trinter(2,4);
+    az = -trinter(3,4);
+    a = [ax ay az]/norm([ax ay az]);
+    o = [-a(2) a(1) 0];
+    TRAJ(:,:,i) = trinter*oa2tr(o,a);
+end
+Q = KR5.ikine(TRAJ);
+KR5.plot(Q);
