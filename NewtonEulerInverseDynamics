@@ -1,4 +1,4 @@
-function Q = invdyn(dh, rb, qt, qtdot, qtddot, grav)
+function Q = inversedy(dh, rb, qt, qtdot, qtddot, grav)
 % This function calculates the inverse dynamics of a robotic arm using recursive Newton Euler Method
 %This function returns the inverse dynamics matrix
 if nargin < 6
