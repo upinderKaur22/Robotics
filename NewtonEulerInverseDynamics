@@ -1,0 +1,70 @@
+function Q = invdyn(dh, rb, qt, qtdot, qtddot, grav)
+% This function calculates the inverse dynamics of a robotic arm using recursive Newton Euler Method
+%This function returns the inverse dynamics matrix
+if nargin < 6
+    grav = [0;0;0];
+end
+
+z0 = [0; 0; 1];
+
+for k = 1 : length(qt)  
+    q = qt(k, :);
+    qdot = qtdot(k, :);
+    qddot = qtddot(k, :);
+
+    dof = length(q); 
+    
+    % ---------------------------------------------------------------------
+    % Calculate Forward recursion
+    for i = 1 : dof
+        T = forkine(i-1, i, dh, q); %This function has been included in this repository
+        R = T(1:3, 1:3);
+        p = [dh.a(i); dh.d(i)*sin(dh.alpha(i)); dh.d(i)*cos(dh.alpha(i))];
+        
+        if i > 1
+            w(:, i) =  R'*(w(:, i-1) + z0.*qdot(i));
+            wdot(:, i) = R'*(wdot(:, i-1) +  z0.*qddot(i) + ...
+                cross(w(:, i-1), z0.*qdot(i)));
+            vdot(:,i) = R'*vdot(:,i-1) + cross(wdot(:,i), p) + ...
+                cross(w(:,i), cross(w(:,i),p));
+        else
+            w(:, i) =  R'*(z0.*qdot(i));
+            wdot(:, i) = R'*(z0.*qddot(i));
+            vdot(:,i) = R'*grav + cross(wdot(:,i), p) + ...
+                cross(w(:,i), cross(w(:,i),p));
+        end
+    end
+    
+    % Dynamic simulation
+    % Backward recursion
+    for i = dof:-1:1
+        p = [dh.a(i); dh.d(i)*sin(dh.alpha(i)); dh.d(i)*cos(dh.alpha(i))];
+        
+        vcdot = vdot(:,i) + cross(wdot(:,i),rb.r(:,i)) + ...
+            cross(w(:,i),cross(w(:,i),rb.r(:,i)));
+        
+        F = rb.m(i)*vcdot;
+        N = rb.I(:,:,i)*wdot(:,i)+cross(w(:,i),rb.I(:,:,i)*w(:,1));
+        
+        if i < dof
+            T = forkine(i, i+1, dh, q);
+            R = T(1:3, 1:3);
+            n(:,i) = R*(n(:,i+1) + cross(R'*p, f(:,i+1))) + ...
+                cross(rb.r(:,i)+p,F) + N;
+            f(:,i) = R*f(:,i+1) + F;
+        else
+            n(:,i) = cross(rb.r(:,i)+p,F) + N;
+            f(:,i) = F;
+        end
+        
+        T = forkine(i-1, i, dh, q);
+        R = T(1:3, 1:3);
+        
+        if dh.type(i) == 't'
+            Q(i,k) = f(:,i)'*R'*z0;
+        elseif dh.type(i) == 'r'
+            Q(i,k) = n(:,i)'*R'*z0;
+        end
+    end
+end
+end
